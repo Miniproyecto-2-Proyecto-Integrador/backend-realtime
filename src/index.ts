@@ -15,6 +15,6 @@ app.get("/", (_req, res) => {
   });
 });
 
-app.listen(PORT, () => {
+app.listen(Number(PORT), "0.0.0.0", () => {
   console.log(`Servidor Realtime ejecutándose en el puerto ${PORT}`);
 });
