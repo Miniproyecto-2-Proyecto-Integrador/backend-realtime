@@ -11,9 +11,8 @@ services:
       file: docker-compose.yml
       service: backend-realtime
   frontend:
-    extends:
-      file: ../frontend/docker-compose.yml
-      service: frontend
+    ports:
+      - "8080:80"
     build:
       context: ../frontend
       dockerfile_inline: |
