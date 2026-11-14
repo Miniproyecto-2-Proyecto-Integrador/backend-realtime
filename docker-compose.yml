@@ -8,4 +8,11 @@ services:
       - "3001:3001"
     env_file:
       - .env
+    volumes:
+      - type: bind
+        source: ${GOOGLE_APPLICATION_CREDENTIALS}
+        target: /var/secrets/google/service-account.json
+        read_only: true
+    environment:
+      GOOGLE_APPLICATION_CREDENTIALS: /var/secrets/google/service-account.json
     restart: unless-stopped
