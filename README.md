@@ -51,3 +51,5 @@ repositorio, ejecuta:
 
 El frontend abre en http://localhost:8080, la API en http://localhost:3000 y
 Realtime en http://localhost:3001.
+
+Compatibilidad TS-02 / US-06: los eventos aceptan IDs nuevos de 8 caracteres URL-safe (letras, números, guion y guion bajo), además de los IDs alfanuméricos existentes de 20 caracteres. Desplegar este servicio y el frontend compatible antes de que la API empiece a generar IDs cortos. Pruebas: `npm run build` y `node --test tests/idSala.test.mjs`.
