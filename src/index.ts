@@ -1,3 +1,4 @@
+import { esIdSalaValido } from "./Salas/Domain/idSala.js";
 import express from "express";
 import cors from "cors";
 import { createServer } from "node:http";
@@ -52,7 +53,6 @@ io.on("connection", (socket) => {
     if (typeof ack === "function") (ack as Respuesta)({ ok: !error, ...(error && { error }), ...(data && { data }) });
   };
   const estaVigente = () => Date.now() < socket.data.exp * 1000;
-  const idValido = (id: unknown): id is string => typeof id === "string" && /^[a-zA-Z0-9]{20}$/.test(id);
   const notificarPresencia = (id: string) => {
     const cantidad = new Set(
       [...(io.sockets.adapter.rooms.get(id) ?? [])].map((sid) => io.sockets.sockets.get(sid)?.data.uid),
@@ -62,7 +62,7 @@ io.on("connection", (socket) => {
 
   socket.on("sala:unir", async (id: unknown, ack: unknown) => {
     if (!estaVigente()) return responder(ack, "La sesión expiró. Vuelve a conectarte.");
-    if (!idValido(id)) return responder(ack, "El ID de sala no es válido.");
+    if (!esIdSalaValido(id)) return responder(ack, "El ID de sala no es válido.");
     try {
       const [sala, usuario] = await db.getAll(rooms.doc(id), perfil);
       if (!sala.exists || sala.get("eliminando")) return responder(ack, "La sala no existe.");
@@ -81,7 +81,7 @@ io.on("connection", (socket) => {
   });
 
   socket.on("sala:salir", async (id: unknown, ack: unknown) => {
-    if (!idValido(id)) return responder(ack, "El ID de sala no es válido.");
+    if (!esIdSalaValido(id)) return responder(ack, "El ID de sala no es válido.");
     await socket.leave(id);
     notificarPresencia(id);
     responder(ack);
@@ -90,7 +90,7 @@ io.on("connection", (socket) => {
   socket.on("chat:enviar", async (entrada: unknown, ack: unknown) => {
     if (!estaVigente()) return responder(ack, "La sesión expiró. Vuelve a conectarte.");
     const { id, texto } = (entrada ?? {}) as { id?: unknown; texto?: unknown };
-    if (!idValido(id) || !socket.rooms.has(id)) return responder(ack, "Primero entra a la sala.");
+    if (!esIdSalaValido(id) || !socket.rooms.has(id)) return responder(ack, "Primero entra a la sala.");
     const contenido = typeof texto === "string" ? texto.trim() : "";
     if (!contenido || contenido.length > 2000) return responder(ack, "Escribe un mensaje de hasta 2000 caracteres.");
     const salaRef = rooms.doc(id);
@@ -120,7 +120,7 @@ io.on("connection", (socket) => {
     if (!estaVigente()) return responder(ack, "La sesión expiró. Vuelve a conectarte.");
     const { id, nombre } = (entrada ?? {}) as { id?: unknown; nombre?: unknown };
     const valor = typeof nombre === "string" ? nombre.trim() : "";
-    if (!idValido(id) || !valor || Array.from(valor).length > 80) {
+    if (!esIdSalaValido(id) || !valor || Array.from(valor).length > 80) {
       return responder(ack, "Usa un ID válido y un nombre de 1 a 80 caracteres.");
     }
     const salaRef = rooms.doc(id);
@@ -143,7 +143,7 @@ io.on("connection", (socket) => {
 
   socket.on("sala:eliminar", async (id: unknown, ack: unknown) => {
     if (!estaVigente()) return responder(ack, "La sesión expiró. Vuelve a conectarte.");
-    if (!idValido(id)) return responder(ack, "El ID de sala no es válido.");
+    if (!esIdSalaValido(id)) return responder(ack, "El ID de sala no es válido.");
     const salaRef = rooms.doc(id);
     try {
       const autorizado = await db.runTransaction(async (t) => {
