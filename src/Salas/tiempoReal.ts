@@ -5,6 +5,9 @@ import { esIdSalaValido } from "./Domain/idSala.js";
 import { construirParticipantes, type ParticipanteSocket } from "./Domain/presencia.js";
 
 type Respuesta = (resultado: { ok: boolean; error?: string; data?: object }) => void;
+// Solo se comparte un avatar con forma de texto corto (el perfil admite hasta 300 caracteres).
+const textoAvatar = (valor: unknown) => (typeof valor === "string" && valor.length > 0 && valor.length <= 300 ? valor : undefined);
+
 type Cambio = { tipo: "entro" | "salio"; nombre: string };
 // Mientras haya gente en una sala, se vigila su documento en Firestore para
 // avisar cuando cambia el nombre o la sala se elimina (por la API, por el
@@ -77,7 +80,7 @@ export function registrarEventos(io: Server, { auth, db }: { auth: Auth; db: Fir
   const participantesDe = (id: string) => {
     const lista: ParticipanteSocket[] = socketsDe(id)
       .filter((socket) => socket.data.uid && socket.data.nombre)
-      .map((socket) => ({ uid: socket.data.uid as string, nombre: socket.data.nombre as string }));
+      .map((socket) => ({ uid: socket.data.uid as string, nombre: socket.data.nombre as string, avatar: socket.data.avatar as string | undefined }));
     return construirParticipantes(lista, vigiladas.get(id)?.propietarioUid);
   };
 
@@ -115,6 +118,7 @@ export function registrarEventos(io: Server, { auth, db }: { auth: Auth; db: Fir
           return;
         }
         socket.data.nombre = usuario.get("username");
+        socket.data.avatar = textoAvatar(usuario.get("avatar"));
         for (const id of ids) {
           const sala = await rooms.doc(id).get();
           if (!sala.exists || sala.get("eliminando")) {
@@ -142,6 +146,7 @@ export function registrarEventos(io: Server, { auth, db }: { auth: Auth; db: Fir
         if (!socket.connected) return;
         const nombre = usuario.get("username") as string;
         socket.data.nombre = nombre;
+        socket.data.avatar = textoAvatar(usuario.get("avatar"));
         // Entrar dos veces a la misma sala (por ejemplo al reconectar) no se anuncia.
         const yaEstaba = socket.rooms.has(id);
         const cambio: Cambio | undefined =
