@@ -15,3 +15,10 @@ test('una persona con varias pestañas cuenta una sola vez y no se exponen UIDs'
 test('sin sockets la lista queda vacía', () => {
   assert.deepEqual(construirParticipantes([], 'u1'), []);
 });
+test('la presencia incluye el avatar solo cuando existe y no revela UIDs', () => {
+  const lista = construirParticipantes([
+    { uid: 'a', nombre: 'luis', avatar: 'avatar3' }, { uid: 'b', nombre: 'ana' },
+    { uid: 'a', nombre: 'luis', avatar: 'avatar3' },
+  ], 'a');
+  assert.deepEqual(lista, [{ nombre: 'luis', esAnfitrion: true, avatar: 'avatar3' }, { nombre: 'ana', esAnfitrion: false }]);
+});
